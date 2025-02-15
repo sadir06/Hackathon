@@ -16,8 +16,10 @@ st.set_page_config(
 try:
     from elevenlabs import generate, Voice, set_api_key
     ELEVENLABS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     ELEVENLABS_AVAILABLE = False
+    st.error(f"Failed to import ElevenLabs: {str(e)}")
+    st.error("To enable voice guidance, please run: pip install elevenlabs")
 
 def init_elevenlabs():
     """Initialize ElevenLabs with proper error handling"""
@@ -27,12 +29,14 @@ def init_elevenlabs():
     try:
         api_key = os.getenv("ELEVENLABS_API_KEY")
         if not api_key:
+            st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
             return None
             
         # Initialize with the API key
         set_api_key(api_key)
         return True
-    except Exception:
+    except Exception as e:
+        st.error(f"Error initializing ElevenLabs: {str(e)}")
         return None
 
 import base64
@@ -599,22 +603,35 @@ def create_voice_summary(advice):
 
 # Generate voice guidance
 def generate_voice_guidance(text):
-    if not ELEVENLABS_AVAILABLE:
-        return None
-            
-    # Initialize ElevenLabs
-    if not init_elevenlabs():
-        return None
-            
     try:
-        # Generate audio using ElevenLabs
-        audio = generate(
-            text=text,
-            voice="Antoni",
-            model="eleven_multilingual_v2"
-        )
-        return audio if audio else None
-    except Exception:
+        if not ELEVENLABS_AVAILABLE:
+            st.error("ElevenLabs package is not installed. Please run: pip install elevenlabs")
+            return None
+            
+        # Initialize ElevenLabs
+        if not init_elevenlabs():
+            return None
+            
+        try:
+            # Generate audio using ElevenLabs
+            audio = generate(
+                text=text,
+                voice="Antoni",
+                model="eleven_multilingual_v2"
+            )
+            
+            if audio:
+                return audio
+            else:
+                st.error("Failed to generate audio. No audio data received.")
+                return None
+                
+        except Exception as voice_error:
+            st.error(f"Error with voice generation: {str(voice_error)}")
+            return None
+            
+    except Exception as e:
+        st.error(f"Voice guidance error: {str(e)}")
         return None
 
 # Add chat functionality
@@ -735,10 +752,12 @@ def get_environmental_metrics(items):
         
         # Convert the response to a Python dictionary
         import json
-        metrics = json.loads(response.text)
-        return metrics
-    except Exception as e:
-        st.error(f"Error generating environmental metrics: {str(e)}")
+        try:
+            metrics = json.loads(response.text)
+            return metrics
+        except json.JSONDecodeError:
+            return None
+    except Exception:
         return None
 
 # Main app
@@ -954,13 +973,14 @@ def main():
                         
                         # Add voice guidance
                         if summary:
+                            st.markdown("""
+                                <div style='background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;'>
+                                    <h4 style='color: #2E7D32; margin-bottom: 0.5rem;'>🎧 Listen to Instructions</h4>
+                                </div>
+                            """, unsafe_allow_html=True)
+                            
                             audio = generate_voice_guidance(summary)
                             if audio:
-                                st.markdown("""
-                                    <div style='background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;'>
-                                        <h4 style='color: #2E7D32; margin-bottom: 0.5rem;'>🎧 Listen to Instructions</h4>
-                                    </div>
-                                """, unsafe_allow_html=True)
                                 st.audio(audio, format='audio/mp3')
                         
                         # Add a friendly call-to-action for advanced mode
@@ -1026,12 +1046,27 @@ def main():
                                 </div>
                             """, unsafe_allow_html=True)
                             
-                            # Voice guidance section
-                            if ELEVENLABS_AVAILABLE and summary:
-                                audio = generate_voice_guidance(summary)
-                                if audio:
-                                    st.markdown("### 🎧 Voice Guidance")
-                                    st.audio(audio, format='audio/mp3')
+                            # Voice guidance section with better error handling and debugging
+                            st.markdown("### 🎧 Voice Guidance")
+                            st.write("Debug Information:")
+                            st.write("- ElevenLabs Available:", ELEVENLABS_AVAILABLE)
+                            st.write("- API Key Set:", bool(os.getenv("ELEVENLABS_API_KEY")))
+                            
+                            if ELEVENLABS_AVAILABLE:
+                                with st.spinner("Generating voice guidance..."):
+                                    summary = create_voice_summary(recycling_advice)
+                                    if summary:
+                                        st.write("- Summary created successfully")
+                                        st.write("Summary text:", summary)
+                                        audio = generate_voice_guidance(summary)
+                                        if audio:
+                                            st.audio(audio, format='audio/mp3')
+                                        else:
+                                            st.error("Failed to generate audio")
+                                    else:
+                                        st.error("Failed to create summary")
+                            else:
+                                st.error("Voice guidance is currently disabled. ElevenLabs package not available.")
 
                 with result_tab3:
                     # Get environmental metrics
