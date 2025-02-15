@@ -558,7 +558,9 @@ def main():
         
         if uploaded_file:
             image = Image.open(uploaded_file)
-            st.image(image, use_container_width=True)
+            # Get the width of the current container
+            container_width = 800  # Default width that works well with most screens
+            st.image(image, width=container_width)
             
             with st.spinner("🔍 Analyzing..."):
                 image_bytes = uploaded_file.getvalue()
