@@ -5,20 +5,18 @@ import io
 import google.generativeai as genai
 # Try to import elevenlabs with new API structure
 try:
-    from elevenlabs import generate, set_api_key, voices
+    from elevenlabs.api import Voice, VoiceSettings
+    from elevenlabs.client import ElevenLabs
     ELEVENLABS_AVAILABLE = True
+    client = ElevenLabs()
     st.info("ElevenLabs package successfully imported")
 except ImportError as e:
     ELEVENLABS_AVAILABLE = False
     st.error(f"Failed to import ElevenLabs: {str(e)}")
     st.error("To enable voice guidance, please run: pip install elevenlabs")
-    def generate(*args, **kwargs):
+    def generate_voice(*args, **kwargs):
         st.warning("Voice generation is currently unavailable. Please install the ElevenLabs package using: pip install elevenlabs")
         return None
-    def set_api_key(*args, **kwargs):
-        pass
-    def voices(*args, **kwargs):
-        return []
     Voice = None
     VoiceSettings = None
 
@@ -520,29 +518,24 @@ def generate_voice_guidance(text):
             st.info("You can get an API key from: https://elevenlabs.io/")
             return None
             
-        # Set the API key
-        try:
-            set_api_key(api_key)
-            st.success("API key set successfully")
-        except Exception as key_error:
-            st.error(f"Failed to set API key: {str(key_error)}")
-            return None
-        
+        # Initialize client with API key
+        client = ElevenLabs(api_key=api_key)
+            
         try:
             # Get available voices
-            available_voices = voices()
-            if not available_voices:
+            voices = client.voices.get_all()
+            if not voices:
                 st.error("No voices available. Please check your API key and subscription.")
                 return None
                 
-            # Use a default voice
-            voice_name = "Antoni"  # Default voice
+            # Use a default voice (Antoni)
+            voice = next((v for v in voices if v.name == "Antoni"), voices[0])
             
             # Generate audio using ElevenLabs
-            audio = generate(
+            audio = client.generate(
                 text=text,
-                voice=voice_name,
-                model="eleven_monolingual_v1"
+                voice=voice,
+                model_id="eleven_monolingual_v1"
             )
             
             if audio:
