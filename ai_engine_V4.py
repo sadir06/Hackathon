@@ -16,15 +16,10 @@ st.set_page_config(
 try:
     import elevenlabs
     ELEVENLABS_AVAILABLE = True
-    client = elevenlabs.init(api_key=os.getenv("ELEVENLABS_API_KEY"))
-    st.info("ElevenLabs package successfully imported")
 except ImportError as e:
     ELEVENLABS_AVAILABLE = False
     st.error(f"Failed to import ElevenLabs: {str(e)}")
     st.error("To enable voice guidance, please run: pip install elevenlabs")
-    def generate_voice(*args, **kwargs):
-        st.warning("Voice generation is currently unavailable. Please install the ElevenLabs package using: pip install elevenlabs")
-        return None
 
 import base64
 from datetime import datetime
@@ -509,11 +504,8 @@ def generate_voice_guidance(text):
             st.error("ElevenLabs package is not installed. Please run: pip install elevenlabs")
             return None
             
-        # Get ElevenLabs API key from environment
-        api_key = os.getenv("ELEVENLABS_API_KEY")
-        if not api_key:
-            st.error("ElevenLabs API key not found. Please add your API key to .streamlit/secrets.toml")
-            st.info("You can get an API key from: https://elevenlabs.io/")
+        # Initialize ElevenLabs
+        if not init_elevenlabs():
             return None
             
         try:
