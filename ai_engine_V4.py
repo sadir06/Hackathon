@@ -240,6 +240,66 @@ st.markdown("""
     .message-content {
         flex: 1;
     }
+
+    /* Responsive container widths */
+    .block-container {
+        max-width: 1200px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Improve image display */
+    .stImage > img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Improve tabs appearance */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 1rem 2rem;
+        background-color: #f0f2f6;
+        border-radius: 5px;
+    }
+    
+    /* Responsive design for different screen sizes */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.5rem 1rem;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .block-container {
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+        
+        /* Two-column layout for desktop */
+        .desktop-two-columns {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .column-left {
+            flex: 1;
+        }
+        
+        .column-right {
+            flex: 2;
+        }
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -529,6 +589,80 @@ def get_recycling_instructions(items):
 
 # Main app
 def main():
+    # Configure page layout for better responsiveness
+    st.markdown("""
+        <style>
+        /* Responsive container widths */
+        .block-container {
+            max-width: 1200px;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        /* Improve image display */
+        .stImage > img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Improve tabs appearance */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 1rem 2rem;
+            background-color: #f0f2f6;
+            border-radius: 5px;
+        }
+        
+        /* Improve results container */
+        .results-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 1rem 0;
+        }
+        
+        /* Responsive design for different screen sizes */
+        @media (max-width: 768px) {
+            .block-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .stTabs [data-baseweb="tab"] {
+                padding: 0.5rem 1rem;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .block-container {
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+            
+            /* Two-column layout for desktop */
+            .desktop-two-columns {
+                display: flex;
+                gap: 2rem;
+            }
+            
+            .column-left {
+                flex: 1;
+            }
+            
+            .column-right {
+                flex: 2;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Container for header
     with st.container():
         st.markdown("<h1>♻️ EcoScan - Smart Recycling Guide</h1>", unsafe_allow_html=True)
@@ -553,21 +687,17 @@ def main():
             </div>
         """, unsafe_allow_html=True)
         
-        # Simplified file uploader
         uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         
         if uploaded_file:
             image = Image.open(uploaded_file)
-            # Get the width of the current container
-            container_width = 800  # Default width that works well with most screens
-            st.image(image, width=container_width)
+            st.image(image, width=800)
             
             with st.spinner("🔍 Analyzing..."):
                 image_bytes = uploaded_file.getvalue()
                 items = analyze_image(image_bytes)
                 
                 if items:
-                    # Get simple instructions
                     instructions = get_recycling_instructions(", ".join(items))
                     if instructions:
                         st.markdown(f"""
@@ -587,25 +717,30 @@ def main():
             </div>
         """, unsafe_allow_html=True)
         
-        # Create main section for image analysis
         uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         
         if uploaded_file:
-            image = Image.open(uploaded_file)
-            st.image(image, use_container_width=True)
+            # Create two columns for desktop layout
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                image = Image.open(uploaded_file)
+                st.image(image, width=400)  # Adjusted width for column layout
 
-            with st.spinner("🔍 Analyzing your item..."):
-                image_bytes = uploaded_file.getvalue()
-                items = analyze_image(image_bytes)
+            with col2:
+                with st.spinner("🔍 Analyzing your item..."):
+                    image_bytes = uploaded_file.getvalue()
+                    items = analyze_image(image_bytes)
 
+                if items:
+                    st.markdown("""
+                        <div class='results-container'>
+                            <h2>📋 Analysis Results</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            # Tabs section uses full width
             if items:
-                st.markdown("""
-                    <div class='results-container'>
-                        <h2>📋 Analysis Results</h2>
-                    </div>
-                """, unsafe_allow_html=True)
-
-                # Create tabs for different sections
                 result_tab1, result_tab2, result_tab3 = st.tabs(["Items Detected", "Recycling Guide", "Environmental Impact"])
                 
                 with result_tab1:
@@ -619,7 +754,6 @@ def main():
 
                 with result_tab2:
                     if items:
-                        # Get recycling instructions using Gemini
                         recycling_advice = get_recycling_instructions(", ".join(items))
                         if recycling_advice:
                             st.markdown(f"""
@@ -629,7 +763,6 @@ def main():
                                 </div>
                             """, unsafe_allow_html=True)
                             
-                            # Add voice guidance
                             with st.spinner("Generating voice guidance..."):
                                 summary = create_voice_summary(recycling_advice)
                                 if summary:
@@ -639,7 +772,7 @@ def main():
                                         st.audio(audio, format='audio/mp3')
 
                 with result_tab3:
-                    # Get dynamic environmental impact for specific items
+                    # Environmental impact section
                     impact_prompt = f"""Analyze the environmental impact of recycling these items: {', '.join(items)}
                     
                     Please provide a clear, engaging analysis covering:
@@ -657,7 +790,6 @@ def main():
                         impact_response.resolve()
                         environmental_impact = impact_response.text.strip()
                         
-                        # Display environmental impact with consistent formatting
                         st.markdown("""
                             <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow);'>
                                 <h3 style='color: var(--primary-green);'>🌍 Environmental Impact Analysis</h3>
@@ -665,28 +797,23 @@ def main():
                             </div>
                         """.format(environmental_impact), unsafe_allow_html=True)
                         
-                        # Add chat interface after environmental impact
+                        # Chat interface section
                         st.markdown("<h3>💬 Chat with EcoBot</h3>", unsafe_allow_html=True)
                         
-                        # Initialize message history if not exists
                         if 'messages' not in st.session_state:
                             st.session_state.messages = []
 
-                        # Add clear chat button
                         if st.button("Clear Chat History", key="clear_chat"):
                             st.session_state.messages = []
                             st.session_state.thinking = False
                             st.rerun()
 
-                        # Display chat history
                         for message in st.session_state.messages:
                             display_chat_message(message['text'], message['is_user'])
                         
-                        # Chat input
                         if 'thinking' not in st.session_state:
                             st.session_state.thinking = False
 
-                        # Chat input area
                         user_message = st.chat_input(
                             "Ask about recycling and sustainability",
                             key="chat_input",
@@ -696,19 +823,14 @@ def main():
                         if user_message:
                             if not st.session_state.thinking:
                                 st.session_state.thinking = True
-                                
-                                # Add user message to history
                                 st.session_state.messages.append({"text": user_message, "is_user": True})
                                 
-                                # Show thinking indicator
                                 with st.spinner("EcoBot is thinking..."):
-                                    # Get recent context (last 3 messages)
                                     context = "\n".join([
                                         f"{'User' if m['is_user'] else 'EcoBot'}: {m['text']}" 
                                         for m in st.session_state.messages[-4:-1]
                                     ] if len(st.session_state.messages) > 1 else [])
                                     
-                                    # Get bot response with all available context
                                     bot_response = get_chatbot_response(
                                         user_message,
                                         context=context,
@@ -717,18 +839,15 @@ def main():
                                         environmental_impact=environmental_impact
                                     )
                                 
-                                # Add bot response to history
                                 st.session_state.messages.append({"text": bot_response, "is_user": False})
-                                
-                                # Reset thinking state
                                 st.session_state.thinking = False
                                 st.rerun()
 
-    # Display sponsor logos
+    # Display sponsor logos with responsive design
     st.markdown("""
-        <div class="sponsor-logos">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Google_Cloud_logo.svg/1280px-Google_Cloud_logo.svg.png" alt="Google Cloud">
-            <img src="https://avatars.githubusercontent.com/u/14957082?s=200&v=4" alt="Vercel">
+        <div class="sponsor-logos" style="margin-top: 3rem; text-align: center;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Google_Cloud_logo.svg/1280px-Google_Cloud_logo.svg.png" alt="Google Cloud" style="height: 40px; margin: 0 1rem;">
+            <img src="https://avatars.githubusercontent.com/u/14957082?s=200&v=4" alt="Vercel" style="height: 40px; margin: 0 1rem;">
         </div>
     """, unsafe_allow_html=True)
 
