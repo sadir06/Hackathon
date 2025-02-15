@@ -5,12 +5,15 @@ import io
 import google.generativeai as genai
 # Try to import elevenlabs with new API structure
 try:
-    from elevenlabs import Voice, VoiceSettings, generate, voices, set_api_key
+    from elevenlabs import generate, set_api_key, voices
     ELEVENLABS_AVAILABLE = True
-except ImportError:
+    st.info("ElevenLabs package successfully imported")
+except ImportError as e:
     ELEVENLABS_AVAILABLE = False
+    st.error(f"Failed to import ElevenLabs: {str(e)}")
+    st.error("To enable voice guidance, please run: pip install elevenlabs")
     def generate(*args, **kwargs):
-        st.warning("Voice generation is currently unavailable. Please check your ElevenLabs configuration.")
+        st.warning("Voice generation is currently unavailable. Please install the ElevenLabs package using: pip install elevenlabs")
         return None
     def set_api_key(*args, **kwargs):
         pass
@@ -55,6 +58,8 @@ st.markdown("""
         --background-light: #F5F9F5;
         --text-dark: #1A1A1A;
         --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        --border-radius: 12px;
+        --spacing-unit: 1rem;
     }
 
     /* Main Container */
@@ -62,118 +67,258 @@ st.markdown("""
         background-color: var(--background-light);
         color: var(--text-dark);
         font-family: 'Inter', sans-serif;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: calc(var(--spacing-unit) * 2);
     }
 
     /* Header Styling */
-    h1 {
-        color: var(--primary-green);
-        font-weight: 700;
+    .header-container {
+        background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+        color: white;
+        padding: calc(var(--spacing-unit) * 2);
+        border-radius: var(--border-radius);
+        margin-bottom: calc(var(--spacing-unit) * 2);
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .header-container h1 {
+        color: white;
         font-size: 2.5rem;
-        margin-bottom: 1.5rem;
-        text-align: center;
+        margin-bottom: var(--spacing-unit);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    h2, h3 {
-        color: var(--primary-green);
-        font-weight: 600;
-    }
-
-    /* File Upload Zone */
-    .uploadfile {
-        border: 2px dashed var(--primary-green);
-        border-radius: 10px;
-        padding: 2rem;
-        text-align: center;
+    /* Mode Selector */
+    .mode-selector {
         background: white;
+        padding: calc(var(--spacing-unit) * 0.75);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        margin: var(--spacing-unit) 0;
+        display: inline-flex;
+        gap: calc(var(--spacing-unit) * 0.5);
+    }
+
+    /* File Uploader */
+    .uploadfile {
+        background: white;
+        border: 2px dashed var(--primary-green);
+        border-radius: var(--border-radius);
+        padding: calc(var(--spacing-unit) * 2);
+        margin: calc(var(--spacing-unit) * 2) 0;
+        text-align: center;
         transition: all 0.3s ease;
     }
 
     .uploadfile:hover {
         border-color: var(--secondary-green);
         background: #F8FFF8;
+        transform: translateY(-2px);
     }
 
-    /* Button Styling */
-    .stButton > button {
-        background-color: var(--primary-green);
+    /* Results Container */
+    .results-container {
+        background: white;
+        padding: calc(var(--spacing-unit) * 2);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        margin: calc(var(--spacing-unit) * 2) 0;
+    }
+
+    /* Tabs Styling */
+    .stTabs {
+        background: white;
+        padding: var(--spacing-unit);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        background: #f8f9fa;
+        padding: calc(var(--spacing-unit) * 0.5);
+        border-radius: calc(var(--border-radius) * 0.75);
+        gap: calc(var(--spacing-unit) * 0.5);
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        background: white;
+        color: var(--primary-green);
+        padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+        border-radius: calc(var(--border-radius) * 0.5);
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background: var(--primary-green);
         color: white;
-        border-radius: 25px;
-        padding: 0.5rem 2rem;
+        transform: translateY(-2px);
+    }
+
+    /* Chat Interface */
+    .chat-container {
+        background: white;
+        padding: calc(var(--spacing-unit) * 2);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        margin: calc(var(--spacing-unit) * 2) 0;
+    }
+
+    .chat-message {
+        padding: calc(var(--spacing-unit) * 1.5);
+        border-radius: calc(var(--border-radius) * 0.75);
+        margin-bottom: var(--spacing-unit);
+        display: flex;
+        align-items: start;
+        gap: var(--spacing-unit);
+    }
+
+    .user-message {
+        background: #E8F5E9;
+        margin-left: calc(var(--spacing-unit) * 2);
+        border-top-left-radius: calc(var(--border-radius) * 0.25);
+    }
+
+    .bot-message {
+        background: #F5F9F5;
+        margin-right: calc(var(--spacing-unit) * 2);
+        border-top-right-radius: calc(var(--border-radius) * 0.25);
+    }
+
+    /* Buttons and Interactive Elements */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+        color: white;
+        padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 2);
+        border-radius: calc(var(--border-radius) * 1.5);
         font-weight: 600;
         border: none;
         transition: all 0.3s ease;
     }
 
     .stButton > button:hover {
-        background-color: var(--secondary-green);
         transform: translateY(-2px);
-        box-shadow: var(--shadow);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    /* Progress Bar */
-    .stProgress > div > div {
-        background-color: var(--primary-green);
-    }
-
-    /* Results Container */
-    .results-container {
+    /* Image Display */
+    .stImage {
         background: white;
-        padding: 2rem;
-        border-radius: 10px;
+        padding: var(--spacing-unit);
+        border-radius: var(--border-radius);
         box-shadow: var(--shadow);
-        margin: 1rem 0;
+        margin: calc(var(--spacing-unit) * 2) 0;
     }
 
-    /* Collapsible Sections */
-    .streamlit-expanderHeader {
-        background-color: #F0F7F0;
-        border-radius: 5px;
-        padding: 0.5rem;
-        font-weight: 600;
+    .stImage img {
+        border-radius: calc(var(--border-radius) * 0.5);
+        width: 100%;
+        height: auto;
     }
 
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-        .stApp {
-            padding: 1rem;
+    /* Desktop Layout */
+    @media (min-width: 992px) {
+        .desktop-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--spacing-unit) * 2);
+            align-items: start;
         }
-        
-        h1 {
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    }
+
+    /* Mobile Adjustments */
+    @media (max-width: 991px) {
+        :root {
+            --spacing-unit: 0.75rem;
+        }
+
+        .header-container h1 {
             font-size: 2rem;
         }
-        
-        .uploadfile {
-            padding: 1rem;
+
+        .stApp {
+            padding: var(--spacing-unit);
         }
     }
 
-    /* Loading Animation */
+    /* Loading States */
+    .stSpinner {
+        display: flex;
+        justify-content: center;
+        margin: calc(var(--spacing-unit) * 2) 0;
+    }
+
     .stSpinner > div {
         border-top-color: var(--primary-green) !important;
     }
 
-    /* Category Icons */
-    .category-icon {
-        font-size: 1.5rem;
-        margin-right: 0.5rem;
-        color: var(--primary-green);
+    /* Alerts and Messages */
+    .stAlert {
+        border-radius: var(--border-radius);
+        margin: var(--spacing-unit) 0;
+        padding: calc(var(--spacing-unit) * 1.25);
     }
 
-    /* Sponsor Section */
+    /* Radio Buttons */
+    .stRadio > div {
+        display: flex;
+        gap: calc(var(--spacing-unit) * 0.5);
+    }
+
+    .stRadio label {
+        background: white;
+        padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+        border-radius: calc(var(--border-radius) * 0.75);
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .stRadio label:hover {
+        background: #f8f9fa;
+        transform: translateY(-2px);
+    }
+
+    /* Footer and Sponsor Section */
+    .footer-section {
+        margin-top: calc(var(--spacing-unit) * 3);
+        padding: calc(var(--spacing-unit) * 2);
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+    }
+
+    .footer-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: calc(var(--spacing-unit) * 2);
+        margin-bottom: calc(var(--spacing-unit) * 2);
+    }
+
+    .footer-column {
+        text-align: center;
+    }
+
+    .footer-column h4 {
+        color: var(--primary-green);
+        margin-bottom: calc(var(--spacing-unit) * 0.75);
+        font-size: 1.2rem;
+    }
+
     .sponsor-logos {
         display: flex;
-        justify-content: space-around;
+        justify-content: center;
         align-items: center;
-        padding: 1.5rem;
-        background-color: white;
-        border-radius: 10px;
-        margin: 2rem 0;
-        box-shadow: var(--shadow);
+        gap: calc(var(--spacing-unit) * 2);
     }
 
     .sponsor-logos img {
         height: 40px;
-        margin: 0 1rem;
         transition: all 0.3s ease;
     }
 
@@ -181,124 +326,29 @@ st.markdown("""
         transform: scale(1.1);
     }
 
-    /* Mode Selector Styling */
-    .mode-selector {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 2rem;
-        gap: 1rem;
-    }
-    
-    .mode-button {
-        background-color: white;
-        color: var(--primary-green);
-        padding: 0.5rem 2rem;
-        border: 2px solid var(--primary-green);
-        border-radius: 25px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .mode-button.active {
-        background-color: var(--primary-green);
-        color: white;
-    }
-    
-    /* Chat Interface Styling */
-    .chat-message {
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: start;
-        gap: 1rem;
-    }
-    
-    .user-message {
-        background-color: #E8F5E9;
-        margin-left: 2rem;
-    }
-    
-    .bot-message {
-        background-color: white;
-        margin-right: 2rem;
-        box-shadow: var(--shadow);
-    }
-    
-    .message-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
+    .github-link {
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        background-color: var(--primary-green);
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: #24292e;
         color: white;
-        font-weight: bold;
-    }
-    
-    .message-content {
-        flex: 1;
+        text-decoration: none;
+        border-radius: calc(var(--border-radius) * 0.5);
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
     }
 
-    /* Responsive container widths */
-    .block-container {
-        max-width: 1200px;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+    .github-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        background: #2f363d;
     }
-    
-    /* Improve image display */
-    .stImage > img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    /* Improve tabs appearance */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        margin-bottom: 1rem;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        padding: 1rem 2rem;
-        background-color: #f0f2f6;
-        border-radius: 5px;
-    }
-    
-    /* Responsive design for different screen sizes */
-    @media (max-width: 768px) {
-        .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            padding: 0.5rem 1rem;
-        }
-    }
-    
-    @media (min-width: 992px) {
-        .block-container {
-            padding-left: 2rem;
-            padding-right: 2rem;
-        }
-        
-        /* Two-column layout for desktop */
-        .desktop-two-columns {
-            display: flex;
-            gap: 2rem;
-        }
-        
-        .column-left {
-            flex: 1;
-        }
-        
-        .column-right {
-            flex: 2;
-        }
+
+    .github-link img {
+        width: 24px;
+        height: 24px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -458,57 +508,55 @@ def create_voice_summary(advice):
 
 # Generate voice guidance
 def generate_voice_guidance(text):
-    if not ELEVENLABS_AVAILABLE:
-        st.warning("Voice guidance is currently unavailable. Please check your ElevenLabs configuration.")
-        return None
-        
     try:
+        if not ELEVENLABS_AVAILABLE:
+            st.error("ElevenLabs package is not installed. Please run: pip install elevenlabs")
+            return None
+            
         # Get ElevenLabs API key from environment
         api_key = os.getenv("ELEVENLABS_API_KEY")
         if not api_key:
-            st.warning("ElevenLabs API key not found. Voice guidance is unavailable.")
+            st.error("ElevenLabs API key not found. Please add your API key to .streamlit/secrets.toml")
+            st.info("You can get an API key from: https://elevenlabs.io/")
             return None
             
         # Set the API key
-        set_api_key(api_key)
-        
-        # Get available voices
-        available_voices = voices()
-        if not available_voices:
-            st.warning("No voices available. Please check your ElevenLabs API key and subscription.")
-            return None
-            
-        # Find a voice with a more enthusiastic style
-        voice_id = None
-        voice_name = None
-        preferred_voices = ['Bella', 'Antoni', 'Sam']
-        
-        for voice in available_voices:
-            if voice.name in preferred_voices:
-                voice_id = voice.voice_id
-                voice_name = voice.name
-                break
-        
-        # If no preferred voice found, use the first available voice
-        if not voice_id and available_voices:
-            voice = available_voices[0]
-            voice_id = voice.voice_id
-            voice_name = voice.name
-            
-        if not voice_id:
-            st.warning("No suitable voice found.")
+        try:
+            set_api_key(api_key)
+            st.success("API key set successfully")
+        except Exception as key_error:
+            st.error(f"Failed to set API key: {str(key_error)}")
             return None
         
-        # Generate audio using ElevenLabs
-        audio = generate(
-            text=text,
-            voice=voice_name,
-            model="eleven_monolingual_v1"
-        )
-        
-        return audio
+        try:
+            # Get available voices
+            available_voices = voices()
+            if not available_voices:
+                st.error("No voices available. Please check your API key and subscription.")
+                return None
+                
+            # Use a default voice
+            voice_name = "Antoni"  # Default voice
+            
+            # Generate audio using ElevenLabs
+            audio = generate(
+                text=text,
+                voice=voice_name,
+                model="eleven_monolingual_v1"
+            )
+            
+            if audio:
+                return audio
+            else:
+                st.error("Failed to generate audio. No audio data received.")
+                return None
+                
+        except Exception as voice_error:
+            st.error(f"Error with voice generation: {str(voice_error)}")
+            return None
+            
     except Exception as e:
-        st.warning(f"Voice guidance unavailable: {str(e)}")
+        st.error(f"Voice guidance error: {str(e)}")
         return None
 
 # Add chat functionality
@@ -587,19 +635,93 @@ def get_recycling_instructions(items):
         st.error(f"Error generating instructions: {str(e)}")
         return None
 
+def get_environmental_metrics(items):
+    try:
+        model = init_gemini()
+        if not model:
+            return None
+            
+        prompt = f"""Analyze these items and provide environmental impact metrics: {', '.join(items)}
+        
+        Return the data in this EXACT JSON format:
+        {{
+            "carbon_footprint": {{
+                "manufacturing": float (in kg CO2),
+                "transportation": float (in kg CO2),
+                "disposal": float (in kg CO2)
+            }},
+            "water_usage": {{
+                "manufacturing": float (in liters),
+                "recycling": float (in liters)
+            }},
+            "energy_savings": {{
+                "recycling_vs_new": float (in kWh),
+                "percentage_saved": float (0-100)
+            }},
+            "landfill_impact": {{
+                "volume": float (in cubic meters),
+                "decomposition_time": float (in years)
+            }},
+            "recycling_benefits": {{
+                "trees_saved": float,
+                "water_saved": float (in liters),
+                "energy_saved": float (in kWh)
+            }}
+        }}
+        
+        Base the numbers on typical industry averages and environmental impact studies.
+        Use realistic values that would make sense for these specific items."""
+        
+        response = model.generate_content(prompt)
+        response.resolve()
+        
+        # Convert the response to a Python dictionary
+        import json
+        metrics = json.loads(response.text)
+        return metrics
+    except Exception as e:
+        st.error(f"Error generating environmental metrics: {str(e)}")
+        return None
+
 # Main app
 def main():
     # Configure page layout for better responsiveness
     st.markdown("""
         <style>
-        /* Responsive container widths */
+        /* Main Container */
         .block-container {
-            max-width: 1200px;
-            padding-top: 2rem;
-            padding-bottom: 2rem;
+            max-width: 1400px;
+            padding: 2rem 3rem;
+            margin: 0 auto;
+        }
+        
+        /* Header Styling */
+        .header-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Mode Selector Styling */
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         /* Improve image display */
+        .stImage {
+            margin: 1rem 0;
+        }
+        
         .stImage > img {
             max-width: 100%;
             height: auto;
@@ -607,19 +729,31 @@ def main():
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        /* Improve tabs appearance */
+        /* Tabs styling */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 2rem;
-            margin-bottom: 1rem;
+            gap: 1rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .stTabs [data-baseweb="tab"] {
-            padding: 1rem 2rem;
-            background-color: #f0f2f6;
-            border-radius: 5px;
+            height: auto;
+            padding: 0.75rem 1.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: none;
+            color: #2E7D32;
+            font-weight: 600;
         }
         
-        /* Improve results container */
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            background: #2E7D32;
+            color: white;
+        }
+        
+        /* Results container */
         .results-container {
             background: white;
             padding: 2rem;
@@ -628,119 +762,189 @@ def main():
             margin: 1rem 0;
         }
         
-        /* Responsive design for different screen sizes */
-        @media (max-width: 768px) {
-            .block-container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-            
-            .stTabs [data-baseweb="tab"] {
-                padding: 0.5rem 1rem;
-            }
-        }
-        
+        /* Desktop specific styles */
         @media (min-width: 992px) {
-            .block-container {
-                padding-left: 2rem;
-                padding-right: 2rem;
+            .desktop-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+                align-items: start;
             }
             
-            /* Two-column layout for desktop */
-            .desktop-two-columns {
-                display: flex;
+            .full-width {
+                grid-column: 1 / -1;
+            }
+            
+            .stRadio > div {
+                flex-direction: row !important;
                 gap: 2rem;
             }
             
-            .column-left {
-                flex: 1;
+            .stRadio label {
+                padding: 1rem 2rem !important;
+                background: #f8f9fa;
+                border-radius: 8px;
+                text-align: center;
+                font-weight: 600;
             }
             
-            .column-right {
-                flex: 2;
+            .stRadio label:hover {
+                background: #e9ecef;
+            }
+        }
+        
+        /* Mobile specific styles */
+        @media (max-width: 991px) {
+            .block-container {
+                padding: 1rem;
+            }
+            
+            .stRadio > div {
+                flex-direction: column !important;
+            }
+            
+            .stRadio label {
+                margin: 0.5rem 0 !important;
             }
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # Container for header
-    with st.container():
-        st.markdown("<h1>♻️ EcoScan - Smart Recycling Guide</h1>", unsafe_allow_html=True)
-        
-        # Mode selector
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            mode = st.radio(
-                "Select Mode",
-                ["Simple", "Advanced"],
-                horizontal=True,
-                label_visibility="collapsed",
-                key="mode_selector"
-            )
-            st.session_state.mode = mode.lower()
-
-    # Main content
+    # Header section with improved visibility
+    st.markdown("""
+        <div class="header-container">
+            <h1>♻️ EcoScan</h1>
+            <p style="font-size: 1.2rem; opacity: 0.9;">Smart Recycling Guide</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Mode selector with improved styling
+    st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+    mode = st.radio(
+        "Choose Mode",
+        ["Simple", "Advanced"],
+        horizontal=True,
+        key="mode_selector",
+        label_visibility="collapsed"
+    )
+    st.session_state.mode = mode.lower()
+    
+    # Mode description with enhanced styling
     if st.session_state.mode == 'simple':
         st.markdown("""
-            <div style='text-align: center; color: #666; margin-bottom: 2rem;'>
-                Simple steps to recycle your items
+            <div style='background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 1.5rem; border-radius: 12px; margin: 1rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                <h3 style='color: #2E7D32; margin-bottom: 0.5rem; font-size: 1.5rem; text-align: center;'>🎯 Quick Recycling Guide</h3>
+                <p style='color: #1B5E20; font-size: 1.1rem; text-align: center;'>Simply upload a photo of your items and get instant guidance</p>
             </div>
         """, unsafe_allow_html=True)
-        
-        uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
-        
-        if uploaded_file:
-            image = Image.open(uploaded_file)
-            st.image(image, width=800)
+    else:
+        st.markdown("""
+            <div style='background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); padding: 1.5rem; border-radius: 12px; margin: 1rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                <h3 style='color: #1565C0; margin-bottom: 0.5rem; font-size: 1.5rem; text-align: center;'>🔬 Detailed Analysis</h3>
+                <p style='color: #0D47A1; font-size: 1.1rem; text-align: center;'>Get comprehensive recycling analysis with environmental impact data</p>
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # File uploader with improved styling
+    st.markdown("""
+        <div style='background: white; padding: 2rem; border-radius: 12px; margin: 2rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+            <div style='text-align: center;'>
+                <h3 style='color: #2E7D32; margin-bottom: 1rem; font-size: 1.3rem;'>📸 Take or Upload a Photo</h3>
+                <p style='color: #666; margin-bottom: 1.5rem;'>Snap a picture or choose an image of items you want to recycle</p>
+            </div>
+    """, unsafe_allow_html=True)
+
+    uploaded_file = st.file_uploader(
+        "Upload an image of items to recycle",
+        type=["jpg", "jpeg", "png"],
+        label_visibility="visible"  # Changed to visible for better clarity
+    )
+
+    if uploaded_file:
+        if st.session_state.mode == 'simple':
+            # Create a container for the image and results
+            st.markdown('<div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: var(--shadow);">', unsafe_allow_html=True)
             
-            with st.spinner("🔍 Analyzing..."):
+            # Display image in a more attractive way
+            image = Image.open(uploaded_file)
+            st.image(image, use_column_width=True)
+            
+            with st.spinner("🔍 Analyzing your items..."):
                 image_bytes = uploaded_file.getvalue()
                 items = analyze_image(image_bytes)
                 
                 if items:
                     instructions = get_recycling_instructions(", ".join(items))
                     if instructions:
+                        # Create a summary for voice guidance
+                        summary = create_voice_summary(instructions)
+                        
+                        # Display results in a more engaging way
                         st.markdown(f"""
-                            <div style='background: #E8F5E9; padding: 1.5rem; border-radius: 10px; margin-top: 1rem;'>
-                                <h3>♻️ Recycling Instructions</h3>
-                                {instructions}
-                                <div style='margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #4CAF50; font-style: italic;'>
-                                    💡 Tip: Switch to Advanced Mode for detailed analysis and chat support
+                            <div style='background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); 
+                                      padding: 2rem; 
+                                      border-radius: 12px; 
+                                      margin-top: 1rem; 
+                                      box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                                <h3 style='color: #2E7D32; margin-bottom: 1rem; text-align: center;'>♻️ Your Recycling Guide</h3>
+                                <div style='background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;'>
+                                    {instructions}
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
-
-    else:  # Advanced mode
-        st.markdown("""
-            <div style='text-align: center; color: #666; margin-bottom: 2rem;'>
-                Detailed recycling analysis and AI assistance
-            </div>
-        """, unsafe_allow_html=True)
-        
-        uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
-        
-        if uploaded_file:
-            # Create two columns for desktop layout
-            col1, col2 = st.columns([1, 1])
+                        
+                        # Add voice guidance
+                        if summary:
+                            st.markdown("""
+                                <div style='background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;'>
+                                    <h4 style='color: #2E7D32; margin-bottom: 0.5rem;'>🎧 Listen to Instructions</h4>
+                                </div>
+                            """, unsafe_allow_html=True)
+                            
+                            audio = generate_voice_guidance(summary)
+                            if audio:
+                                st.audio(audio, format='audio/mp3')
+                        
+                        # Add a friendly call-to-action for advanced mode
+                        st.markdown("""
+                            <div style='margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #4CAF50; text-align: center;'>
+                                <p style='color: #2E7D32; font-style: italic;'>
+                                    💡 Want more detailed analysis? Try Advanced Mode for environmental impact data and chat support!
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
             
-            with col1:
-                image = Image.open(uploaded_file)
-                st.image(image, width=400)  # Adjusted width for column layout
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Advanced mode with grid layout
+            st.markdown('<div class="desktop-layout">', unsafe_allow_html=True)
+            
+            # Image column
+            st.markdown('<div>', unsafe_allow_html=True)
+            image = Image.open(uploaded_file)
+            st.image(image, width=600)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Analysis column
+            st.markdown('<div>', unsafe_allow_html=True)
+            with st.spinner("🔍 Analyzing your item..."):
+                image_bytes = uploaded_file.getvalue()
+                items = analyze_image(image_bytes)
 
-            with col2:
-                with st.spinner("🔍 Analyzing your item..."):
-                    image_bytes = uploaded_file.getvalue()
-                    items = analyze_image(image_bytes)
-
-                if items:
-                    st.markdown("""
-                        <div class='results-container'>
-                            <h2>📋 Analysis Results</h2>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-            # Tabs section uses full width
             if items:
+                st.markdown("""
+                    <div class='results-container'>
+                        <h2 style='color: #2E7D32;'>📋 Analysis Results</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # Full-width tabs section
+            if items:
+                st.markdown('<div class="full-width">', unsafe_allow_html=True)
                 result_tab1, result_tab2, result_tab3 = st.tabs(["Items Detected", "Recycling Guide", "Environmental Impact"])
                 
                 with result_tab1:
@@ -763,16 +967,136 @@ def main():
                                 </div>
                             """, unsafe_allow_html=True)
                             
-                            with st.spinner("Generating voice guidance..."):
-                                summary = create_voice_summary(recycling_advice)
-                                if summary:
-                                    st.markdown("### 🎧 Voice Guidance")
-                                    audio = generate_voice_guidance(summary)
-                                    if audio:
-                                        st.audio(audio, format='audio/mp3')
+                            # Voice guidance section with better error handling and debugging
+                            st.markdown("### 🎧 Voice Guidance")
+                            st.write("Debug Information:")
+                            st.write("- ElevenLabs Available:", ELEVENLABS_AVAILABLE)
+                            st.write("- API Key Set:", bool(os.getenv("ELEVENLABS_API_KEY")))
+                            
+                            if ELEVENLABS_AVAILABLE:
+                                with st.spinner("Generating voice guidance..."):
+                                    summary = create_voice_summary(recycling_advice)
+                                    if summary:
+                                        st.write("- Summary created successfully")
+                                        st.write("Summary text:", summary)
+                                        audio = generate_voice_guidance(summary)
+                                        if audio:
+                                            st.audio(audio, format='audio/mp3')
+                                        else:
+                                            st.error("Failed to generate audio")
+                                    else:
+                                        st.error("Failed to create summary")
+                            else:
+                                st.error("Voice guidance is currently disabled. ElevenLabs package not available.")
 
                 with result_tab3:
-                    # Environmental impact section
+                    # Get environmental metrics
+                    metrics = get_environmental_metrics(items)
+                    
+                    if metrics:
+                        # Create columns for the visualizations
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Carbon Footprint Breakdown
+                            st.markdown("""
+                                <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 1rem;'>
+                                    <h4 style='color: var(--primary-green);'>🏭 Carbon Footprint Breakdown</h4>
+                            """, unsafe_allow_html=True)
+                            
+                            # Create a pie chart for carbon footprint
+                            import plotly.express as px
+                            carbon_data = metrics['carbon_footprint']
+                            fig = px.pie(
+                                values=list(carbon_data.values()),
+                                names=list(carbon_data.keys()),
+                                title='CO₂ Emissions by Stage (kg)',
+                                color_discrete_sequence=px.colors.sequential.Greens
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            # Water Usage Comparison
+                            st.markdown("""
+                                <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow);'>
+                                    <h4 style='color: var(--primary-green);'>💧 Water Usage Impact</h4>
+                            """, unsafe_allow_html=True)
+                            
+                            water_data = metrics['water_usage']
+                            fig = px.bar(
+                                x=list(water_data.keys()),
+                                y=list(water_data.values()),
+                                title='Water Consumption (Liters)',
+                                color_discrete_sequence=px.colors.sequential.Blues
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        
+                        with col2:
+                            # Energy Savings
+                            st.markdown("""
+                                <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 1rem;'>
+                                    <h4 style='color: var(--primary-green);'>⚡ Energy Impact</h4>
+                            """, unsafe_allow_html=True)
+                            
+                            energy_savings = metrics['energy_savings']['recycling_vs_new']
+                            percentage_saved = metrics['energy_savings']['percentage_saved']
+                            
+                            import plotly.graph_objects as go
+                            fig = go.Figure(go.Indicator(
+                                mode = "gauge+number",
+                                value = percentage_saved,
+                                title = {'text': "Energy Savings vs. New Production"},
+                                gauge = {
+                                    'axis': {'range': [0, 100]},
+                                    'bar': {'color': "#2E7D32"},
+                                    'steps': [
+                                        {'range': [0, 33], 'color': "#E8F5E9"},
+                                        {'range': [33, 66], 'color': "#A5D6A7"},
+                                        {'range': [66, 100], 'color': "#4CAF50"}
+                                    ]
+                                }
+                            ))
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            # Recycling Benefits
+                            st.markdown("""
+                                <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow);'>
+                                    <h4 style='color: var(--primary-green);'>🌱 Environmental Benefits</h4>
+                            """, unsafe_allow_html=True)
+                            
+                            benefits = metrics['recycling_benefits']
+                            fig = px.bar(
+                                x=list(benefits.keys()),
+                                y=list(benefits.values()),
+                                title='Positive Environmental Impact',
+                                color_discrete_sequence=px.colors.sequential.Greens
+                            )
+                            fig.update_layout(showlegend=False)
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        
+                        # Additional metrics display
+                        st.markdown("""
+                            <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow); margin-top: 1rem;'>
+                                <h4 style='color: var(--primary-green);'>📊 Additional Impact Metrics</h4>
+                                <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;'>
+                        """, unsafe_allow_html=True)
+                        
+                        # Display landfill impact
+                        landfill = metrics['landfill_impact']
+                        st.markdown(f"""
+                            <div style='background: #F1F8E9; padding: 1rem; border-radius: 8px;'>
+                                <h5 style='color: #2E7D32; margin-bottom: 0.5rem;'>Landfill Impact</h5>
+                                <p>Volume: {landfill['volume']:.2f} m³</p>
+                                <p>Decomposition: {landfill['decomposition_time']:.1f} years</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        st.markdown("</div></div>", unsafe_allow_html=True)
+                    
+                    # Environmental impact text analysis
                     impact_prompt = f"""Analyze the environmental impact of recycling these items: {', '.join(items)}
                     
                     Please provide a clear, engaging analysis covering:
@@ -843,13 +1167,36 @@ def main():
                                 st.session_state.thinking = False
                                 st.rerun()
 
-    # Display sponsor logos with responsive design
+    # Footer section with GitHub repository
     st.markdown("""
-        <div class="sponsor-logos" style="margin-top: 3rem; text-align: center;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Google_Cloud_logo.svg/1280px-Google_Cloud_logo.svg.png" alt="Google Cloud" style="height: 40px; margin: 0 1rem;">
-            <img src="https://avatars.githubusercontent.com/u/14957082?s=200&v=4" alt="Vercel" style="height: 40px; margin: 0 1rem;">
+        <div class="footer-section">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h4>🚀 Powered By</h4>
+                    <div class="sponsor-logos">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Google_Cloud_logo.svg/1280px-Google_Cloud_logo.svg.png" alt="Google Cloud">
+                        <img src="https://avatars.githubusercontent.com/u/14957082?s=200&v=4" alt="Vercel">
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h4>🌟 Open Source</h4>
+                    <p style="color: #666; margin-bottom: 1rem;">Contribute to EcoScan's development</p>
+                    <a href="https://github.com/sadir06/Hackathon" target="_blank" class="github-link">
+                        <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+                        View on GitHub
+                    </a>
+                </div>
+                <div class="footer-column">
+                    <h4>🌍 Our Mission</h4>
+                    <p style="color: #666;">Making recycling easier and more accessible through AI technology</p>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.9rem;">
+                <p>© 2024 EcoScan. Built with ❤️ for a sustainable future.</p>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
+    main()
     main()
