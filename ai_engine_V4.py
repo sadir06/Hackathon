@@ -14,7 +14,7 @@ st.set_page_config(
 
 # Try to import elevenlabs with new API structure
 try:
-    import elevenlabs
+    from elevenlabs import generate, Voice, set_api_key
     ELEVENLABS_AVAILABLE = True
 except ImportError as e:
     ELEVENLABS_AVAILABLE = False
@@ -32,8 +32,8 @@ def init_elevenlabs():
             st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
             return None
             
-        # Initialize the client
-        elevenlabs.set_api_key(api_key)
+        # Initialize with the API key
+        set_api_key(api_key)
         return True
     except Exception as e:
         st.error(f"Error initializing ElevenLabs: {str(e)}")
@@ -613,19 +613,11 @@ def generate_voice_guidance(text):
             return None
             
         try:
-            # Set API key directly before generating audio
-            api_key = os.getenv("ELEVENLABS_API_KEY")
-            if not api_key:
-                st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
-                return None
-                
-            elevenlabs.set_api_key(api_key)
-            
             # Generate audio using ElevenLabs
-            audio = elevenlabs.generate(
+            audio = generate(
                 text=text,
                 voice="Antoni",
-                model="eleven_multilingual_v2"  # Updated to use the latest model
+                model="eleven_multilingual_v2"
             )
             
             if audio:
