@@ -14,7 +14,8 @@ st.set_page_config(
 
 # Try to import elevenlabs with new API structure
 try:
-    from elevenlabs import generate, Voice, set_api_key
+    from elevenlabs import voices, generate, play, Voice, VoiceSettings
+    from elevenlabs.api import Models
     ELEVENLABS_AVAILABLE = True
 except ImportError as e:
     ELEVENLABS_AVAILABLE = False
@@ -33,6 +34,7 @@ def init_elevenlabs():
             return None
             
         # Initialize with the API key
+        from elevenlabs import set_api_key
         set_api_key(api_key)
         return True
     except Exception as e:
@@ -613,7 +615,7 @@ def generate_voice_guidance(text):
             return None
             
         try:
-            # Generate audio using ElevenLabs
+            # Generate audio using ElevenLabs with the latest API
             audio = generate(
                 text=text,
                 voice="Antoni",
