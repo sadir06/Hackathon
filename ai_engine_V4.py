@@ -3,6 +3,15 @@ import os
 from PIL import Image
 import io
 import google.generativeai as genai
+
+# Configure page settings - MUST be the first Streamlit command
+st.set_page_config(
+    page_title="EcoScan - Smart Recycling Guide",
+    page_icon="♻️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
 # Try to import elevenlabs with new API structure
 try:
     from elevenlabs.api import Voice, VoiceSettings
@@ -36,14 +45,6 @@ if 'mode' not in st.session_state:
 
 if 'thinking' not in st.session_state:
     st.session_state.thinking = False
-
-# Configure page settings
-st.set_page_config(
-    page_title="EcoScan - Smart Recycling Guide",
-    page_icon="♻️",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
 
 # Add custom CSS
 st.markdown("""
