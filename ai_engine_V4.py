@@ -3,9 +3,9 @@ import os
 from PIL import Image
 import io
 import google.generativeai as genai
-# Try to import elevenlabs, but provide fallback if not available
+# Try to import elevenlabs with new API structure
 try:
-    from elevenlabs import generate, set_api_key, voices
+    from elevenlabs import Voice, VoiceSettings, generate, voices, set_api_key
     ELEVENLABS_AVAILABLE = True
 except ImportError:
     ELEVENLABS_AVAILABLE = False
@@ -16,6 +16,8 @@ except ImportError:
         pass
     def voices(*args, **kwargs):
         return []
+    Voice = None
+    VoiceSettings = None
 
 import base64
 from datetime import datetime
@@ -416,30 +418,35 @@ def generate_voice_guidance(text):
             st.warning("No voices available. Please check your ElevenLabs API key and subscription.")
             return None
             
-        # Find a voice with a more enthusiastic style (like 'Bella' or 'Antoni')
+        # Find a voice with a more enthusiastic style
         voice_id = None
-        preferred_voices = ['Bella', 'Antoni', 'Sam']  # Voices known for energetic delivery
+        voice_name = None
+        preferred_voices = ['Bella', 'Antoni', 'Sam']
+        
         for voice in available_voices:
             if voice.name in preferred_voices:
                 voice_id = voice.voice_id
+                voice_name = voice.name
                 break
         
         # If no preferred voice found, use the first available voice
         if not voice_id and available_voices:
-            voice_id = available_voices[0].voice_id
+            voice = available_voices[0]
+            voice_id = voice.voice_id
+            voice_name = voice.name
             
         if not voice_id:
             st.warning("No suitable voice found.")
             return None
         
         # Generate audio using ElevenLabs
-        audio_bytes = generate(
+        audio = generate(
             text=text,
-            voice=voice_id,
+            voice=voice_name,
             model="eleven_monolingual_v1"
         )
         
-        return audio_bytes
+        return audio
     except Exception as e:
         st.warning(f"Voice guidance unavailable: {str(e)}")
         return None
@@ -625,9 +632,9 @@ def main():
                                 summary = create_voice_summary(recycling_advice)
                                 if summary:
                                     st.markdown("### 🎧 Voice Guidance")
-                                    audio_bytes = generate_voice_guidance(summary)
-                                    if audio_bytes:
-                                        st.audio(audio_bytes, format='audio/mp3')
+                                    audio = generate_voice_guidance(summary)
+                                    if audio:
+                                        st.audio(audio, format='audio/mp3')
 
                 with result_tab3:
                     # Get dynamic environmental impact for specific items
