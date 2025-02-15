@@ -14,10 +14,9 @@ st.set_page_config(
 
 # Try to import elevenlabs with new API structure
 try:
-    from elevenlabs.api import Voice, VoiceSettings
-    from elevenlabs.client import ElevenLabs
+    import elevenlabs
     ELEVENLABS_AVAILABLE = True
-    client = ElevenLabs()
+    client = elevenlabs.init(api_key=os.getenv("ELEVENLABS_API_KEY"))
     st.info("ElevenLabs package successfully imported")
 except ImportError as e:
     ELEVENLABS_AVAILABLE = False
@@ -26,8 +25,6 @@ except ImportError as e:
     def generate_voice(*args, **kwargs):
         st.warning("Voice generation is currently unavailable. Please install the ElevenLabs package using: pip install elevenlabs")
         return None
-    Voice = None
-    VoiceSettings = None
 
 import base64
 from datetime import datetime
@@ -519,24 +516,12 @@ def generate_voice_guidance(text):
             st.info("You can get an API key from: https://elevenlabs.io/")
             return None
             
-        # Initialize client with API key
-        client = ElevenLabs(api_key=api_key)
-            
         try:
-            # Get available voices
-            voices = client.voices.get_all()
-            if not voices:
-                st.error("No voices available. Please check your API key and subscription.")
-                return None
-                
-            # Use a default voice (Antoni)
-            voice = next((v for v in voices if v.name == "Antoni"), voices[0])
-            
             # Generate audio using ElevenLabs
-            audio = client.generate(
+            audio = elevenlabs.generate(
                 text=text,
-                voice=voice,
-                model_id="eleven_monolingual_v1"
+                voice="Antoni",
+                model="eleven_monolingual_v1"
             )
             
             if audio:
@@ -1192,5 +1177,4 @@ def main():
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    main()
     main()
