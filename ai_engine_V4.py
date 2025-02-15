@@ -82,6 +82,65 @@ st.markdown("""
         padding: calc(var(--spacing-unit) * 2);
     }
 
+    /* All text elements */
+    p, span, div, label, h1, h2, h3, h4, h5, h6 {
+        color: var(--text-color);
+    }
+
+    /* File uploader text */
+    .uploadfile-text, 
+    .stFileUploader label,
+    .stFileUploader span,
+    .stFileUploader p {
+        color: var(--text-color) !important;
+    }
+
+    /* Mode selector text */
+    .stRadio label span {
+        color: var(--text-color) !important;
+    }
+
+    /* Results text */
+    .results-container,
+    .results-container p,
+    .results-container span,
+    .results-container div {
+        color: var(--text-color);
+    }
+
+    /* White background containers */
+    div[style*="background: white"],
+    div[style*="background: white"] p,
+    div[style*="background: white"] span,
+    div[style*="background: white"] div {
+        color: var(--text-color) !important;
+    }
+
+    /* Footer text */
+    .footer-section p,
+    .footer-section span,
+    .footer-section div:not(.github-link) {
+        color: var(--text-color) !important;
+    }
+
+    /* Streamlit elements */
+    .stMarkdown,
+    .stMarkdown p,
+    .stText,
+    .stText p {
+        color: var(--text-color) !important;
+    }
+
+    /* Exception for elements that should remain white text */
+    .header-container,
+    .header-container h1,
+    .header-container p,
+    .github-link,
+    .stButton > button,
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        color: white !important;
+    }
+
     /* Header Styling */
     .header-container {
         background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
@@ -864,7 +923,7 @@ def main():
         <div style='background: white; padding: 2rem; border-radius: 12px; margin: 2rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
             <div style='text-align: center;'>
                 <h3 style='color: #2E7D32; margin-bottom: 1rem; font-size: 1.3rem;'>📸 Take or Upload a Photo</h3>
-                <p style='color: #666; margin-bottom: 1.5rem;'>Snap a picture or choose an image of items you want to recycle</p>
+                <p style='color: #000000; margin-bottom: 1.5rem;'>Snap a picture or choose an image of items you want to recycle</p>
             </div>
     """, unsafe_allow_html=True)
 
@@ -1187,27 +1246,27 @@ def main():
         <div class="footer-section">
             <div class="footer-content">
                 <div class="footer-column">
-                    <h4>🚀 Powered By</h4>
+                    <h4 style='color: #2E7D32;'>🚀 Powered By</h4>
                     <div class="sponsor-logos">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Google_Cloud_logo.svg/1280px-Google_Cloud_logo.svg.png" alt="Google Cloud">
                         <img src="https://avatars.githubusercontent.com/u/14957082?s=200&v=4" alt="Vercel">
                     </div>
                 </div>
                 <div class="footer-column">
-                    <h4>🌟 Open Source</h4>
-                    <p style="color: #666; margin-bottom: 1rem;">Contribute to EcoScan's development</p>
+                    <h4 style='color: #2E7D32;'>🌟 Open Source</h4>
+                    <p style='color: #000000; margin-bottom: 1rem;'>Contribute to EcoScan's development</p>
                     <a href="https://github.com/sadir06/Hackathon" target="_blank" class="github-link">
                         <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
                         View on GitHub
                     </a>
                 </div>
                 <div class="footer-column">
-                    <h4>🌍 Our Mission</h4>
-                    <p style="color: #666;">Making recycling easier and more accessible through AI technology</p>
+                    <h4 style='color: #2E7D32;'>🌍 Our Mission</h4>
+                    <p style='color: #000000;'>Making recycling easier and more accessible through AI technology</p>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.9rem;">
-                <p>© 2024 EcoScan. Built with ❤️ for a sustainable future.</p>
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style='color: #000000; font-size: 0.9rem;'>© 2024 EcoScan. Built with ❤️ for a sustainable future.</p>
             </div>
         </div>
     """, unsafe_allow_html=True)
