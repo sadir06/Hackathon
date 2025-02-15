@@ -21,6 +21,24 @@ except ImportError as e:
     st.error(f"Failed to import ElevenLabs: {str(e)}")
     st.error("To enable voice guidance, please run: pip install elevenlabs")
 
+def init_elevenlabs():
+    """Initialize ElevenLabs client with proper error handling"""
+    if not ELEVENLABS_AVAILABLE:
+        return None
+        
+    try:
+        api_key = os.getenv("ELEVENLABS_API_KEY")
+        if not api_key:
+            st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
+            return None
+            
+        # Initialize the client
+        elevenlabs.set_api_key(api_key)
+        return True
+    except Exception as e:
+        st.error(f"Error initializing ElevenLabs: {str(e)}")
+        return None
+
 import base64
 from datetime import datetime
 from dotenv import load_dotenv
@@ -48,6 +66,7 @@ st.markdown("""
         --accent-blue: #1565C0;
         --background-light: #F5F9F5;
         --text-dark: #1A1A1A;
+        --text-color: #000000;
         --shadow: 0 2px 4px rgba(0,0,0,0.1);
         --border-radius: 12px;
         --spacing-unit: 1rem;
@@ -56,7 +75,7 @@ st.markdown("""
     /* Main Container */
     .stApp {
         background-color: var(--background-light);
-        color: var(--text-dark);
+        color: var(--text-color);
         font-family: 'Inter', sans-serif;
         max-width: 1400px;
         margin: 0 auto;
@@ -116,6 +135,7 @@ st.markdown("""
         border-radius: var(--border-radius);
         box-shadow: var(--shadow);
         margin: calc(var(--spacing-unit) * 2) 0;
+        color: var(--text-color);
     }
 
     /* Tabs Styling */
@@ -340,6 +360,28 @@ st.markdown("""
     .github-link img {
         width: 24px;
         height: 24px;
+    }
+
+    /* Message Content */
+    .message-content {
+        color: var(--text-color);
+    }
+
+    /* Text in white containers */
+    div[style*="background: white"] {
+        color: var(--text-color);
+    }
+
+    /* Ensure text is visible in recycling guide */
+    div[style*="background: white"] p,
+    div[style*="background: white"] li,
+    div[style*="background: white"] span {
+        color: var(--text-color) !important;
+    }
+
+    /* Chat messages */
+    .chat-message .message-content {
+        color: var(--text-color);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -859,7 +901,7 @@ def main():
                                       margin-top: 1rem; 
                                       box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
                                 <h3 style='color: #2E7D32; margin-bottom: 1rem; text-align: center;'>♻️ Your Recycling Guide</h3>
-                                <div style='background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;'>
+                                <div style='background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; color: #000000;'>
                                     {instructions}
                                 </div>
                             </div>
@@ -934,7 +976,9 @@ def main():
                             st.markdown(f"""
                                 <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow);'>
                                     <h3 style='color: var(--primary-green);'>♻️ Recycling Guide</h3>
-                                    {recycling_advice}
+                                    <div style='color: #000000;'>
+                                        {recycling_advice}
+                                    </div>
                                 </div>
                             """, unsafe_allow_html=True)
                             
