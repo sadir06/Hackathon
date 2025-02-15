@@ -3,7 +3,20 @@ import os
 from PIL import Image
 import io
 import google.generativeai as genai
-from elevenlabs import generate, set_api_key, voices
+# Try to import elevenlabs, but provide fallback if not available
+try:
+    from elevenlabs import generate, set_api_key, voices
+    ELEVENLABS_AVAILABLE = True
+except ImportError:
+    ELEVENLABS_AVAILABLE = False
+    def generate(*args, **kwargs):
+        st.warning("Voice generation is currently unavailable. Please check your ElevenLabs configuration.")
+        return None
+    def set_api_key(*args, **kwargs):
+        pass
+    def voices(*args, **kwargs):
+        return []
+
 import base64
 from datetime import datetime
 from dotenv import load_dotenv
@@ -383,11 +396,15 @@ def create_voice_summary(advice):
 
 # Generate voice guidance
 def generate_voice_guidance(text):
+    if not ELEVENLABS_AVAILABLE:
+        st.warning("Voice guidance is currently unavailable. Please check your ElevenLabs configuration.")
+        return None
+        
     try:
         # Get ElevenLabs API key from environment
         api_key = os.getenv("ELEVENLABS_API_KEY")
         if not api_key:
-            st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
+            st.warning("ElevenLabs API key not found. Voice guidance is unavailable.")
             return None
             
         # Set the API key
@@ -396,7 +413,7 @@ def generate_voice_guidance(text):
         # Get available voices
         available_voices = voices()
         if not available_voices:
-            st.error("No voices available. Please check your ElevenLabs API key and subscription.")
+            st.warning("No voices available. Please check your ElevenLabs API key and subscription.")
             return None
             
         # Find a voice with a more enthusiastic style (like 'Bella' or 'Antoni')
@@ -412,7 +429,7 @@ def generate_voice_guidance(text):
             voice_id = available_voices[0].voice_id
             
         if not voice_id:
-            st.error("No suitable voice found.")
+            st.warning("No suitable voice found.")
             return None
         
         # Generate audio using ElevenLabs
@@ -424,9 +441,7 @@ def generate_voice_guidance(text):
         
         return audio_bytes
     except Exception as e:
-        st.error(f"Error generating voice guidance: {str(e)}")
-        # Add more detailed error information
-        st.error("Please ensure you have a valid ElevenLabs API key and subscription.")
+        st.warning(f"Voice guidance unavailable: {str(e)}")
         return None
 
 # Add chat functionality
