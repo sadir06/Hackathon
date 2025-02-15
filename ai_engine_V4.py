@@ -144,7 +144,6 @@ st.markdown("""
     /* Header Styling */
     .header-container {
         background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
-        color: white;
         padding: calc(var(--spacing-unit) * 2);
         border-radius: var(--border-radius);
         margin-bottom: calc(var(--spacing-unit) * 2);
@@ -152,11 +151,15 @@ st.markdown("""
         text-align: center;
     }
 
+    .header-container h1,
+    .header-container p {
+        color: white !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
     .header-container h1 {
-        color: white;
         font-size: 2.5rem;
         margin-bottom: var(--spacing-unit);
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     /* Mode Selector */
@@ -610,11 +613,19 @@ def generate_voice_guidance(text):
             return None
             
         try:
+            # Set API key directly before generating audio
+            api_key = os.getenv("ELEVENLABS_API_KEY")
+            if not api_key:
+                st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
+                return None
+                
+            elevenlabs.set_api_key(api_key)
+            
             # Generate audio using ElevenLabs
             audio = elevenlabs.generate(
                 text=text,
                 voice="Antoni",
-                model="eleven_monolingual_v1"
+                model="eleven_multilingual_v2"  # Updated to use the latest model
             )
             
             if audio:
@@ -885,8 +896,8 @@ def main():
     # Header section with improved visibility
     st.markdown("""
         <div class="header-container">
-            <h1>♻️ EcoScan</h1>
-            <p style="font-size: 1.2rem; opacity: 0.9;">Smart Recycling Guide</p>
+            <h1 style="color: white;">♻️ EcoScan</h1>
+            <p style="font-size: 1.2rem; opacity: 0.9; color: white;">Smart Recycling Guide</p>
         </div>
     """, unsafe_allow_html=True)
     
