@@ -14,7 +14,7 @@ st.set_page_config(
 
 # Try to import elevenlabs with new API structure
 try:
-    from elevenlabs import generate, Voice, voices
+    from elevenlabs import generate, Voice, set_api_key
     ELEVENLABS_AVAILABLE = True
 except ImportError as e:
     ELEVENLABS_AVAILABLE = False
@@ -22,7 +22,7 @@ except ImportError as e:
     st.error("To enable voice guidance, please run: pip install elevenlabs")
 
 def init_elevenlabs():
-    """Initialize ElevenLabs client with proper error handling"""
+    """Initialize ElevenLabs with proper error handling"""
     if not ELEVENLABS_AVAILABLE:
         return None
         
@@ -33,7 +33,6 @@ def init_elevenlabs():
             return None
             
         # Initialize with the API key
-        from elevenlabs import set_api_key
         set_api_key(api_key)
         return True
     except Exception as e:
