@@ -1,5 +1,5 @@
 streamlit==1.31.0
 Pillow==10.2.0
 google-generativeai==0.3.2
-elevenlabs==0.3.0
+elevenlabs==1.13.5
 python-dotenv==1.0.1 
