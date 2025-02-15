@@ -16,10 +16,8 @@ st.set_page_config(
 try:
     from elevenlabs import generate, Voice, set_api_key
     ELEVENLABS_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     ELEVENLABS_AVAILABLE = False
-    st.error(f"Failed to import ElevenLabs: {str(e)}")
-    st.error("To enable voice guidance, please run: pip install elevenlabs")
 
 def init_elevenlabs():
     """Initialize ElevenLabs with proper error handling"""
@@ -29,14 +27,12 @@ def init_elevenlabs():
     try:
         api_key = os.getenv("ELEVENLABS_API_KEY")
         if not api_key:
-            st.error("ElevenLabs API key not found. Please set the ELEVENLABS_API_KEY environment variable.")
             return None
             
         # Initialize with the API key
         set_api_key(api_key)
         return True
-    except Exception as e:
-        st.error(f"Error initializing ElevenLabs: {str(e)}")
+    except Exception:
         return None
 
 import base64
@@ -508,11 +504,11 @@ def analyze_image(image_bytes):
         What recyclable or disposable items do you see in this image?"""
         
         response = model.generate_content([prompt, image])
-        response.resolve()  # Ensure the response is complete
+        response.resolve()
         
         # Extract items from response and clean up
         text = response.text.strip()
-        if not text:  # If response is empty, try a simpler prompt
+        if not text:
             prompt = "List all visible objects in this image that could be recycled or need disposal, separated by commas:"
             response = model.generate_content([prompt, image])
             response.resolve()
@@ -522,15 +518,14 @@ def analyze_image(image_bytes):
         items = [item.strip() for item in text.split(',')]
         items = [item for item in items if item and not item.lower().startswith('i see') and not item.lower().startswith('there')]
         
-        if not items:  # If still empty, try one more time with a very simple prompt
+        if not items:
             prompt = "What objects do you see in this image? List them with commas:"
             response = model.generate_content([prompt, image])
             response.resolve()
             items = [item.strip() for item in response.text.strip().split(',')]
         
         return [item for item in items if item]
-    except Exception as e:
-        st.error(f"Error analyzing image: {str(e)}")
+    except Exception:
         return None
 
 # Generate recycling advice
@@ -573,8 +568,7 @@ def get_recycling_advice(item_description):
         response = model.generate_content(prompt)
         response.resolve()
         return response.text
-    except Exception as e:
-        st.error(f"Error generating recycling advice: {str(e)}")
+    except Exception:
         return None
 
 # Generate a concise summary for voice guidance
@@ -597,41 +591,27 @@ def create_voice_summary(advice):
         response = model.generate_content(prompt.format(advice=advice))
         response.resolve()
         return response.text.strip()
-    except Exception as e:
-        st.error(f"Error creating summary: {str(e)}")
+    except Exception:
         return None
 
 # Generate voice guidance
 def generate_voice_guidance(text):
+    if not ELEVENLABS_AVAILABLE:
+        return None
+            
+    # Initialize ElevenLabs
+    if not init_elevenlabs():
+        return None
+            
     try:
-        if not ELEVENLABS_AVAILABLE:
-            st.error("ElevenLabs package is not installed. Please run: pip install elevenlabs")
-            return None
-            
-        # Initialize ElevenLabs
-        if not init_elevenlabs():
-            return None
-            
-        try:
-            # Generate audio using ElevenLabs
-            audio = generate(
-                text=text,
-                voice="Antoni",
-                model="eleven_multilingual_v2"
-            )
-            
-            if audio:
-                return audio
-            else:
-                st.error("Failed to generate audio. No audio data received.")
-                return None
-                
-        except Exception as voice_error:
-            st.error(f"Error with voice generation: {str(voice_error)}")
-            return None
-            
-    except Exception as e:
-        st.error(f"Voice guidance error: {str(e)}")
+        # Generate audio using ElevenLabs
+        audio = generate(
+            text=text,
+            voice="Antoni",
+            model="eleven_multilingual_v2"
+        )
+        return audio if audio else None
+    except Exception:
         return None
 
 # Add chat functionality
@@ -1245,6 +1225,13 @@ def main():
                                 st.session_state.messages.append({"text": bot_response, "is_user": False})
                                 st.session_state.thinking = False
                                 st.rerun()
+            else:
+                st.markdown("""
+                    <div style='background: white; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow);'>
+                        <h3 style='color: var(--primary-green);'>🌍 Environmental Impact Analysis</h3>
+                        <p>Environmental impact data is currently being processed. Please try again in a moment.</p>
+                    </div>
+                """, unsafe_allow_html=True)
 
     # Footer section with GitHub repository
     st.markdown("""
