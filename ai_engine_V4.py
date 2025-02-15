@@ -861,7 +861,7 @@ def main():
             
             # Display image in a more attractive way
             image = Image.open(uploaded_file)
-            st.image(image, use_column_width=True)
+            st.image(image, width=600)
             
             with st.spinner("🔍 Analyzing your items..."):
                 image_bytes = uploaded_file.getvalue()
